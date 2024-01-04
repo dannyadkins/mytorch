@@ -120,7 +120,6 @@ class ReLUTester:
         return 'nn.functional.relu'
 
     def test(self, torch_impl, fn_path, *args):
-        print("Running on args: ", args)
         # run relu based on the provided path
         fn = get_fn(torch_impl, fn_path)
         return fn(*args)
