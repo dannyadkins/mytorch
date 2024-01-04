@@ -131,7 +131,7 @@ class ReLUTester:
 if __name__ == "__main__":
 
     experiments = [
-        (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton', 'nn.functional.bad_relu']),
+        (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_inplace',  'nn.functional.relu_vectorized_numpy', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton', 'nn.functional.bad_relu']),
     ]
 
     run_testers(experiments)
