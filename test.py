@@ -61,13 +61,14 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
                 print(f"{name}\t\t{correct}\t\t{speed}")
         
 
-        print(f"Test {tester.name} passed!")
+        print(f"Test {tester.__class__.__name__} passed!")
 
 # abstract TestBase class, using ABC: 
 class TestBase(ABC):
     def __init__(self, args: tuple, kwargs: dict):
         self.args = args 
         self.kwargs = kwargs 
+        self.name = self.__class__.__name__
 
     # static get_random_args method
     @staticmethod
