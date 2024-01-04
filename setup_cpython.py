@@ -19,7 +19,7 @@ compiler_directives = {'language_level': 3}
 setup(
     name='mytorch_cython_modules',
     ext_modules=cythonize(pyx_files, compiler_directives=compiler_directives, annotate=True),
-    include_dirs=[numpy.get_include(), torch.get_include(), torch.utils.cpp_extension.include_paths()[0]],
+    include_dirs=[numpy.get_include()],
     script_args=['build_ext', '--inplace'],
     zip_safe=False,
 )
