@@ -4,7 +4,7 @@ import numpy as np
 from abc import ABC
 from time import time 
 from typing import List, Tuple
-
+from prettytable import PrettyTable
 # The first function should be the canonical implementation, which we use as the "correct" solution.
 def run_testers(experiments: List[Tuple[callable, List[str]]]):
     # for each of pytorch and mytorch, creates an instance and calls setup 
@@ -24,10 +24,12 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
         start_time = time()
         pytorch_output = tester.test(pytorch, canonical_fn_path, *args)
         end_time = time()
+        baseline_speed = end_time - start_time
         outputs.append({
             'name': 'pytorch.' + canonical_fn_path,
             'correct': True,
-            'speed': end_time - start_time,
+            'speed': baseline_speed,
+            'speed_ratio': 1.0,
         })
 
         for fn_impl in fn_impls:
@@ -46,22 +48,28 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
                 'name': "mytorch." + fn_impl,
                 'correct': solution_matches,
                 'speed': end_time - start_time,
+                'speed_ratio': (end_time - start_time) / baseline_speed,
             })
+        print_table(outputs)
 
-        # print the outputs in a really pretty colorful table
-        print("Output:")
-        print("Name\t\t\tCorrect\t\tSpeed")
-        for output in outputs:
-            name = output['name']
-            correct = output.get('correct', None)
-            speed = output['speed']
-            if correct is None:
-                print(f"{name}\t\t{speed}")
-            else:
-                print(f"{name}\t\t{correct}\t\t{speed}")
-        
+def print_table(outputs: List[dict]):
+    table = PrettyTable(['Name', 'Correct', 'Speed', 'Speed Ratio %'])
+    for output in outputs:
+        speed_ratio_percent_str = "{:.2f}%".format(output['speed_ratio'] * 100)
+        # table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str])
+        # if speed % is an improvement, make it green, otherwise red 
+        if output['speed_ratio'] < 1.0 and output['correct']:
+            speed_ratio_percent_str = "\033[92m" + speed_ratio_percent_str + "\033[0m"
+        elif output['speed_ratio'] > 1.0: 
+            speed_ratio_percent_str = "\033[91m" + speed_ratio_percent_str + "\033[0m"
 
-        print(f"Test {tester.__class__.__name__} passed!")
+        # now for correctness, if it's correct, make it green, otherwise red
+        if output['correct']:
+            output['correct'] = "\033[92m" + "True" + "\033[0m"
+        else: 
+            output['correct'] = "\033[91m" + "False" + "\033[0m"
+        table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str])
+    print(table)
 
 # abstract TestBase class, using ABC: 
 class TestBase(ABC):
