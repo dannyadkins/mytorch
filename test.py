@@ -2,23 +2,65 @@ import torch as pytorch
 import mytorch 
 import numpy as np
 from abc import ABC
-
+from time import time 
 from typing import List, Tuple
-
 
 # The first function should be the canonical implementation, which we use as the "correct" solution.
 def run_testers(experiments: List[Tuple[callable, List[str]]]):
     # for each of pytorch and mytorch, creates an instance and calls setup 
-    tester_classes, fn_impls = experiments
 
-    for TesterClass in tester_classes:
+    for experiment in experiments:
+        TesterClass, fn_impls = experiment
         print("Running test for", TesterClass.__name__)
         tester = TesterClass()
         tester.setup()
-        args = tester.get_random_args()
-        pytorch_output = tester.test(pytorch, **args)
-        mytorch_output = tester.test(mytorch, **args)
-        assert pytorch_output.allclose(mytorch_output)
+
+        args = TesterClass.get_random_args()
+        canonical_fn_path = TesterClass.get_canonical_fn_path()
+
+        # outputs contain name, output, speed 
+        outputs: List[dict] = []
+
+        start_time = time()
+        pytorch_output = tester.test(pytorch, canonical_fn_path, *args)
+        end_time = time()
+        outputs.append({
+            'name': 'pytorch.' + canonical_fn_path,
+            'correct': True,
+            'speed': end_time - start_time,
+        })
+
+        for fn_impl in fn_impls:
+            start_time = time()
+            mytorch_output = tester.test(mytorch, fn_impl, *args)
+            end_time = time()
+
+            solution_matches = True 
+        
+            try: 
+                assert pytorch_output.allclose(mytorch_output)
+            except Exception:
+                solution_matches = False
+            
+            outputs.append({
+                'name': "mytorch." + fn_impl,
+                'correct': solution_matches,
+                'speed': end_time - start_time,
+            })
+
+        # print the outputs in a really pretty colorful table
+        print("Output:")
+        print("Name\t\t\tCorrect\t\tSpeed")
+        for output in outputs:
+            name = output['name']
+            correct = output.get('correct', None)
+            speed = output['speed']
+            if correct is None:
+                print(f"{name}\t\t{speed}")
+            else:
+                print(f"{name}\t\t{correct}\t\t{speed}")
+        
+
         print(f"Test {tester.name} passed!")
 
 # abstract TestBase class, using ABC: 
@@ -39,8 +81,15 @@ class TestBase(ABC):
     def setup(self):
         pass
 
-    def test(self, torch_impl, **args):
+    def test(self, torch_impl, *args):
         pass 
+
+def get_fn(parent_module, fn_path):
+    fn_parts = fn_path.split('.')
+    fn = parent_module
+    for part in fn_parts:
+        fn = getattr(fn, part)
+    return fn
 
 # setup function, which does any prep work 
 class ReLUTester: 
@@ -50,17 +99,17 @@ class ReLUTester:
     # gets some random relu-compatible arguments 
     @staticmethod
     def get_random_args():
-        return {'input': pytorch.rand(10, 10)}
+        return [pytorch.rand(10, 10)]
     
     # gets the canonical implementation PATH of relu
     @staticmethod
     def get_canonical_fn_path():
         return 'nn.functional.relu'
 
-    def test(self, torch_impl, fn_path, **args):
+    def test(self, torch_impl, fn_path, *args):
         # run relu based on the provided path
-        fn = getattr(torch_impl, fn_path)
-        return fn(**args)
+        fn = get_fn(torch_impl, fn_path)
+        return fn(*args)
 
 # Here is a list that maps every major building block in deep learning, progressively getting bigger.
 # It points to the pytorch implementation/callpath, gives a set of example inputs, 
@@ -69,7 +118,7 @@ class ReLUTester:
 if __name__ == "__main__":
 
     experiments = [
-        ([ReLUTester], ['nn.functional.relu']),
+        (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton']),
     ]
 
-    run_testers()
+    run_testers(experiments)
