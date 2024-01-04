@@ -21,8 +21,10 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
         # outputs contain name, output, speed 
         outputs: List[dict] = []
 
+        cloned_args = [arg.clone() if isinstance(arg, pytorch.Tensor) else arg for arg in args]
+
         start_time = time()
-        pytorch_output = tester.test(pytorch, canonical_fn_path, *args)
+        pytorch_output = tester.test(pytorch, canonical_fn_path, *cloned_args)
         end_time = time()
         baseline_speed = end_time - start_time
         outputs.append({
@@ -33,8 +35,10 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
         })
 
         for fn_impl in fn_impls:
+            cloned_args = [arg.clone() if isinstance(arg, pytorch.Tensor) else arg for arg in args]
+
             start_time = time()
-            mytorch_output = tester.test(mytorch, fn_impl, *args)
+            mytorch_output = tester.test(mytorch, fn_impl, *cloned_args)
             end_time = time()
 
             solution_matches = True 
@@ -105,10 +109,10 @@ class ReLUTester:
     def setup(self):
         pass
     
-    # gets some random relu-compatible arguments 
+    # gets some random relu-compatible arguments where some are negative
     @staticmethod
     def get_random_args():
-        return [pytorch.rand(10, 10)]
+        return [pytorch.randn(100, 100),]
     
     # gets the canonical implementation PATH of relu
     @staticmethod
@@ -116,6 +120,7 @@ class ReLUTester:
         return 'nn.functional.relu'
 
     def test(self, torch_impl, fn_path, *args):
+        print("Running on args: ", args)
         # run relu based on the provided path
         fn = get_fn(torch_impl, fn_path)
         return fn(*args)
@@ -127,7 +132,7 @@ class ReLUTester:
 if __name__ == "__main__":
 
     experiments = [
-        (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton']),
+        (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton', 'nn.functional.bad_relu']),
     ]
 
     run_testers(experiments)
