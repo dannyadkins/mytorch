@@ -1,4 +1,5 @@
 import numpy as np 
+from mytorch.nn.cython import relu_cython_naive as cython_relu_naive_impl
 
 def relu_naive(t):
     # super naive implementation of relu from scratch:
@@ -14,6 +15,9 @@ def relu_naive_inplace(t):
 
 def relu_vectorized_numpy(t):
     return np.maximum(t, 0)
+
+def relu_cython_naive(t):
+    return cython_relu_naive_impl.relu_cython(t)
 
 def bad_relu(t):
     return t 
