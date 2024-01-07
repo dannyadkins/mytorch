@@ -186,13 +186,32 @@ class MaxPool2DTester:
     def test(self, torch_impl, fn_path, *args):
         fn = get_fn(torch_impl, fn_path)
         return fn(*args)
+    
+class BatchNorm2DTester: 
+    def setup(self):
+        pass
+    
+    # gets some random batchnorm2d compatible arguments
+    # inputs: (input_tensor, running_mean, running_var, weight (optional), bias (optional), training (optional), momentum (optional), eps (optional))
+    @staticmethod
+    def get_random_args():
+        return [pytorch.randn(1, 1, 28, 28), pytorch.Tensor([0]), pytorch.Tensor([1])]
+    
+    @staticmethod
+    def get_canonical_fn_path():
+        return 'nn.functional.batch_norm'
+
+    def test(self, torch_impl, fn_path, *args):
+        fn = get_fn(torch_impl, fn_path)
+        return fn(*args)
 
 if __name__ == "__main__":
 
     experiments = [
         (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_inplace', 'relu_cython_naive', 'nn.functional.relu_vectorized_numpy', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton', 'nn.functional.bad_relu']),
         (Conv2DTester, ['nn.functional.conv2d_naive']),
-        (MaxPool2DTester, ['nn.functional.max_pool2d_naive'])
+        (MaxPool2DTester, ['nn.functional.max_pool2d_naive']),
+        (BatchNorm2DTester, ['nn.functional.batch_norm_naive']),
     ]
 
     run_testers(experiments)

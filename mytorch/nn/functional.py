@@ -86,7 +86,7 @@ def conv2d_naive(t, kernel, stride=1, padding=0):
 
     return output
 
-### 
+### maxpool2d
 
 # input, kernel_size, stride, padding, dilation, ceil_mode, return_indices
 def max_pool2d_naive(input_tensor, pool_kernel_size, pool_stride, pool_padding):
@@ -114,5 +114,26 @@ def max_pool2d_naive(input_tensor, pool_kernel_size, pool_stride, pool_padding):
                             if (i + h < input_height) and (j + w < input_width):
                                 # update the maximum value in the output tensor
                                 output[batch_idx, channel_idx, i // pool_stride[0], j // pool_stride[1]] = max(output[batch_idx, channel_idx, i // pool_stride[0], j // pool_stride[1]], input_tensor[batch_idx, channel_idx, i + h, j + w])
+
+    return output
+
+### batchnorm2d
+
+def batch_norm_naive(input_tensor, running_mean, running_var):
+    # get the shape of the input tensor
+    batch_size, num_channels, input_height, input_width = input_tensor.shape
+
+    # initialize the output tensor
+    output = torch.zeros((batch_size, num_channels, input_height, input_width))
+
+    # loop over every element in the batch
+    for batch_idx in range(batch_size):
+        # for each channel
+        for channel_idx in range(num_channels):
+            # for each position
+            for i in range(input_height):
+                for j in range(input_width):
+                    # normalize the input tensor
+                    output[batch_idx, channel_idx, i, j] = (input_tensor[batch_idx, channel_idx, i, j] - running_mean) / torch.sqrt(running_var)
 
     return output
