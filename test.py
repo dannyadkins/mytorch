@@ -94,8 +94,8 @@ def print_table(outputs: List[dict]):
         # make the result pretty, e.g. just print the first few characters/first number
         if isinstance(output['result'], pytorch.Tensor):
             # the first number in the whole tensor, regardless of dimensionality
-            output['result'] = str(output['result'].flatten()[0]) + ' ' + str(output['result'].shape)
-        
+            output['result'] = str(output['result'].flatten()[0]) + ' ' + str(output['result'].shape) + ' ' + str(output['result'].dtype)
+
         table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str, output['error'], output['result']])
     print(table)
 
