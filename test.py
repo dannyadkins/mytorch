@@ -59,6 +59,10 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
             try: 
                 assert pytorch_output.allclose(mytorch_output)
             except Exception as e:
+                print("Input args: ", args)
+                print("Pytorch: ", pytorch_output)
+                print("mytorch: ", mytorch_output)
+                print(pytorch_output == mytorch_output)
                 solution_matches = False
             
             outputs.append({
@@ -152,10 +156,16 @@ class Conv2DTester:
     def setup(self):
         pass
     
-    # gets some random conv2d-compatible arguments
+    # gets some random conv2d-compatible arguments, make the kernel entirely positive
     @staticmethod
     def get_random_args():
-        return [pytorch.randn(1, 1, 28, 28), pytorch.randn(1, 1, 3, 3),]
+        t = pytorch.randn(1, 1, 28, 28)
+        t[t < 0] = 0
+
+        kernel = pytorch.randn(1, 1, 3, 3)
+        kernel[kernel < 0] = 0
+
+        return [t, kernel]
     
     @staticmethod
     def get_canonical_fn_path():

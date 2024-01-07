@@ -52,23 +52,22 @@ def relu_naive_triton(t):
 
 # conv2d methods
 # currently assumes stride=1 and padding=0
+# also assumes t and kernel are both entirely positive 
 def conv2d_naive(t, kernel):
     batch_size, t_channels, t_height, t_width = t.shape
     k_out_channels, k_in_channels, k_height, k_width = kernel.shape
 
-    # Calculate the height and width of the output
     output_height = t_height - k_height + 1
     output_width = t_width - k_width + 1
 
-    # Initialize the output tensor
     output = torch.zeros((batch_size, k_out_channels, output_height, output_width))
 
-    # Perform the convolution operation
     for b in range(batch_size):
         for k_out in range(k_out_channels):
             for t_channel in range(t_channels):
                 for i in range(output_height):
                     for j in range(output_width):
-                        output[b, k_out, i, j] += torch.sum(t[b, t_channel, i:i+k_height, j:j+k_width] * kernel[k_out, t_channel])
+                        conv_sum = torch.sum(t[b, t_channel, i:i+k_height, j:j+k_width] * kernel[k_out, t_channel])
+                        output[b, k_out, i, j] += conv_sum
 
     return output
