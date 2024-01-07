@@ -55,7 +55,7 @@ def relu_naive_triton(t):
 # currently assumes stride=1 and padding=0
 def conv2d_naive(t, kernel, stride=1, padding=0):
     # get the shape of the input tensor and the kernel
-    batch_size, t_channels, t_height, t_width = t.shape
+    batch_size, num_channels, t_height, t_width = t.shape
     k_out_channels, k_in_channels, k_height, k_width = kernel.shape
 
     # calculate the output dimensions
@@ -71,7 +71,7 @@ def conv2d_naive(t, kernel, stride=1, padding=0):
         # for each output channel
         for k_out in range(k_out_channels):
             # and for each input channel
-            for t_channel in range(t_channels):
+            for t_channel in range(num_channels):
                 # slide the kernel over the input tensor
                 for i in range(0, t_height - k_height + 1 + padding, stride):
                     for j in range(0, t_width - k_width + 1 + padding, stride):
@@ -89,30 +89,30 @@ def conv2d_naive(t, kernel, stride=1, padding=0):
 ### 
 
 # input, kernel_size, stride, padding, dilation, ceil_mode, return_indices
-def max_pool2d_naive(input, kernel_size, stride, padding):
+def max_pool2d_naive(input_tensor, pool_kernel_size, pool_stride, pool_padding):
     # get the shape of the input tensor
-    batch_size, in_channels, in_height, in_width = input.shape
+    batch_size, num_channels, input_height, input_width = input_tensor.shape
 
     # calculate the output dimensions
-    output_height = ((in_height - kernel_size[0] + 2 * padding[0]) // stride[0]) + 1
-    output_width = ((in_width - kernel_size[1] + 2 * padding[1]) // stride[1]) + 1
+    output_height = ((input_height - pool_kernel_size[0] + 2 * pool_padding[0]) // pool_stride[0]) + 1
+    output_width = ((input_width - pool_kernel_size[1] + 2 * pool_padding[1]) // pool_stride[1]) + 1
 
-    # initialize the output tensor with negative infinity values, it's going to hold the max pooled results
-    output = torch.full((batch_size, in_channels, output_height, output_width), float('-inf'))
+    # initialize the output tensor with negative infinity values for max pooling
+    output = torch.full((batch_size, num_channels, output_height, output_width), float('-inf'))
 
-    # we loop over every element in the batch
-    for b in range(batch_size):
+    # loop over every element in the batch
+    for batch_idx in range(batch_size):
         # for each channel
-        for c in range(in_channels):
-            # slide the kernel over the input tensor
-            for i in range(0, in_height - kernel_size[0] + 1, stride[0]):
-                for j in range(0, in_width - kernel_size[1] + 1, stride[1]):
-                    # for each position, we find the maximum value
-                    for h in range(kernel_size[0]):
-                        for w in range(kernel_size[1]):
-                            # make sure we're within the bounds of the input tensor
-                            if (i + h < in_height) and (j + w < in_width):
+        for channel_idx in range(num_channels):
+            # slide the pooling kernel over the input tensor
+            for i in range(0, input_height - pool_kernel_size[0] + 1, pool_stride[0]):
+                for j in range(0, input_width - pool_kernel_size[1] + 1, pool_stride[1]):
+                    # for each position, find the maximum value
+                    for h in range(pool_kernel_size[0]):
+                        for w in range(pool_kernel_size[1]):
+                            # ensure we're within the bounds of the input tensor
+                            if (i + h < input_height) and (j + w < input_width):
                                 # update the maximum value in the output tensor
-                                output[b, c, i // stride[0], j // stride[1]] = max(output[b, c, i // stride[0], j // stride[1]], input[b, c, i + h, j + w])
+                                output[batch_idx, channel_idx, i // pool_stride[0], j // pool_stride[1]] = max(output[batch_idx, channel_idx, i // pool_stride[0], j // pool_stride[1]], input_tensor[batch_idx, channel_idx, i + h, j + w])
 
     return output
