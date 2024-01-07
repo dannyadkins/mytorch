@@ -85,3 +85,34 @@ def conv2d_naive(t, kernel, stride=1, padding=0):
                                     output[b, k_out, i // stride, j // stride] += t[b, t_channel, i + h, j + w] * kernel[k_out, t_channel, h, w]
 
     return output
+
+### 
+
+# input, kernel_size, stride, padding, dilation, ceil_mode, return_indices
+def max_pool2d_naive(input, kernel_size, stride, padding):
+    # get the shape of the input tensor
+    batch_size, in_channels, in_height, in_width = input.shape
+
+    # calculate the output dimensions
+    output_height = ((in_height - kernel_size[0] + 2 * padding[0]) // stride[0]) + 1
+    output_width = ((in_width - kernel_size[1] + 2 * padding[1]) // stride[1]) + 1
+
+    # initialize the output tensor with negative infinity values, it's going to hold the max pooled results
+    output = torch.full((batch_size, in_channels, output_height, output_width), float('-inf'))
+
+    # we loop over every element in the batch
+    for b in range(batch_size):
+        # for each channel
+        for c in range(in_channels):
+            # slide the kernel over the input tensor
+            for i in range(0, in_height - kernel_size[0] + 1, stride[0]):
+                for j in range(0, in_width - kernel_size[1] + 1, stride[1]):
+                    # for each position, we find the maximum value
+                    for h in range(kernel_size[0]):
+                        for w in range(kernel_size[1]):
+                            # make sure we're within the bounds of the input tensor
+                            if (i + h < in_height) and (j + w < in_width):
+                                # update the maximum value in the output tensor
+                                output[b, c, i // stride[0], j // stride[1]] = max(output[b, c, i // stride[0], j // stride[1]], input[b, c, i + h, j + w])
+
+    return output

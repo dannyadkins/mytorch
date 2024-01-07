@@ -169,11 +169,30 @@ class Conv2DTester:
         fn = get_fn(torch_impl, fn_path)
         return fn(*args)
     
+class MaxPool2DTester: 
+    def setup(self):
+        pass
+    
+    # gets some random maxpool2d compatible arguments
+    # input, kernel_size, stride, padding, dilation, ceil_mode, return_indices
+    @staticmethod
+    def get_random_args():
+        return [pytorch.randn(1, 1, 28, 28), (2, 2), (2, 2), (0, 0)]
+    
+    @staticmethod
+    def get_canonical_fn_path():
+        return 'nn.functional.max_pool2d'
+
+    def test(self, torch_impl, fn_path, *args):
+        fn = get_fn(torch_impl, fn_path)
+        return fn(*args)
+
 if __name__ == "__main__":
 
     experiments = [
         (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_inplace', 'relu_cython_naive', 'nn.functional.relu_vectorized_numpy', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton', 'nn.functional.bad_relu']),
-        (Conv2DTester, ['nn.functional.conv2d_naive'])
+        (Conv2DTester, ['nn.functional.conv2d_naive']),
+        (MaxPool2DTester, ['nn.functional.max_pool2d_naive'])
     ]
 
     run_testers(experiments)
