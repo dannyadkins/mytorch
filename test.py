@@ -12,7 +12,6 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
 
     for experiment in experiments:
         TesterClass, fn_impls = experiment
-        print("Running test for", TesterClass.__name__)
         tester = TesterClass()
         tester.setup()
 
@@ -37,7 +36,6 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
             'result': pytorch_output
         })
 
-        print("Pytorch output completed.")
 
         for fn_impl in fn_impls:
             cloned_args = [arg.clone() if isinstance(arg, pytorch.Tensor) else arg for arg in args]
@@ -59,10 +57,6 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
             try: 
                 assert pytorch_output.allclose(mytorch_output)
             except Exception as e:
-                print("Input args: ", args)
-                print("Pytorch: ", pytorch_output)
-                print("mytorch: ", mytorch_output)
-                print(pytorch_output == mytorch_output)
                 solution_matches = False
             
             outputs.append({

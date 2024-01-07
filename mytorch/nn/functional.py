@@ -50,26 +50,38 @@ def relu_naive_triton(t):
     pass
 
 
-# conv2d methods
+### conv2d 
+
 # currently assumes stride=1 and padding=0
-# also assumes t and kernel are both entirely positive 
 def conv2d_naive(t, kernel, stride=1, padding=0):
+    # get the shape of the input tensor and the kernel
     batch_size, t_channels, t_height, t_width = t.shape
     k_out_channels, k_in_channels, k_height, k_width = kernel.shape
 
+    # calculate the output dimensions
     output_height = ((t_height - k_height + 2 * padding) // stride) + 1
     output_width = ((t_width - k_width + 2 * padding) // stride) + 1
 
+    # initialize the output tensor with zeros, it's going to hold the convolved results
     output = torch.zeros((batch_size, k_out_channels, output_height, output_width))
 
+    # now we're going to do the convolution operation
+    # we loop over every element in the batch
     for b in range(batch_size):
+        # for each output channel
         for k_out in range(k_out_channels):
+            # and for each input channel
             for t_channel in range(t_channels):
+                # slide the kernel over the input tensor
                 for i in range(0, t_height - k_height + 1 + padding, stride):
                     for j in range(0, t_width - k_width + 1 + padding, stride):
+                        # for each position, we do an element-wise multiplication
+                        # and sum the results to get the convolved value
                         for h in range(k_height):
                             for w in range(k_width):
+                                # make sure we're within the bounds of the input tensor
                                 if (i + h < t_height) and (j + w < t_width):
+                                    # accumulate the results in the output tensor
                                     output[b, k_out, i // stride, j // stride] += t[b, t_channel, i + h, j + w] * kernel[k_out, t_channel, h, w]
 
     return output
