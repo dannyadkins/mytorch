@@ -5,6 +5,7 @@ from abc import ABC
 from time import time 
 from typing import List, Tuple
 from prettytable import PrettyTable
+
 # The first function should be the canonical implementation, which we use as the "correct" solution.
 def run_testers(experiments: List[Tuple[callable, List[str]]]):
     # for each of pytorch and mytorch, creates an instance and calls setup 
@@ -32,7 +33,8 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
             'correct': True,
             'speed': baseline_speed,
             'speed_ratio': 1.0,
-            'error': None
+            'error': None,
+            'result': pytorch_output
         })
 
         print("Pytorch output completed.")
@@ -41,6 +43,7 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
             cloned_args = [arg.clone() if isinstance(arg, pytorch.Tensor) else arg for arg in args]
 
             error: Exception = None
+            mytorch_output = None
 
             start_time = time()
 
@@ -55,7 +58,7 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
         
             try: 
                 assert pytorch_output.allclose(mytorch_output)
-            except Exception:
+            except Exception as e:
                 solution_matches = False
             
             outputs.append({
@@ -64,11 +67,12 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
                 'speed': end_time - start_time,
                 'speed_ratio': (end_time - start_time) / baseline_speed,
                 'error': error,
+                'result': mytorch_output
             })
         print_table(outputs)
 
 def print_table(outputs: List[dict]):
-    table = PrettyTable(['Name', 'Correct', 'Speed', 'Speed Ratio %', 'Error'])
+    table = PrettyTable(['Name', 'Correct', 'Speed', 'Speed Ratio %', 'Error', 'Result'])
     for output in outputs:
         speed_ratio_percent_str = "{:.2f}%".format(output['speed_ratio'] * 100)
         # table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str])
@@ -86,8 +90,13 @@ def print_table(outputs: List[dict]):
         
         if output['error'] is not None:
             output['error'] = "\033[91m" + str(output['error']) + "\033[0m"
+
+        # make the result pretty, e.g. just print the first few characters/first number
+        if isinstance(output['result'], pytorch.Tensor):
+            # the first number in the whole tensor, regardless of dimensionality
+            output['result'] = str(output['result'].flatten()[0]) + ' ' + str(output['result'].shape)
         
-        table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str, output['error']])
+        table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str, output['error'], output['result']])
     print(table)
 
 # abstract TestBase class, using ABC: 
