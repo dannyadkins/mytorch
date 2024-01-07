@@ -119,12 +119,22 @@ def max_pool2d_naive(input_tensor, pool_kernel_size, pool_stride, pool_padding):
 
 ### batchnorm2d
 
-def batch_norm_naive(input_tensor, running_mean, running_var):
+def batch_norm_naive(input_tensor, running_mean, running_var, weight=None, bias=None, training=False, momentum=0.1, eps=1e-5):
     # get the shape of the input tensor
     batch_size, num_channels, input_height, input_width = input_tensor.shape
 
     # initialize the output tensor
     output = torch.zeros((batch_size, num_channels, input_height, input_width))
+
+    # check if we are in training mode
+    # TODO: WIP this part does not work yet 
+    if training:
+        # compute the mean and variance of the input tensor
+        current_mean = torch.mean(input_tensor, dim=(0, 2, 3))
+        current_var = torch.var(input_tensor, dim=(0, 2, 3), unbiased=False)
+        # update running mean and variance
+        running_mean = momentum * current_mean + (1 - momentum) * running_mean
+        running_var = momentum * current_var + (1 - momentum) * running_var
 
     # loop over every element in the batch
     for batch_idx in range(batch_size):
@@ -134,6 +144,13 @@ def batch_norm_naive(input_tensor, running_mean, running_var):
             for i in range(input_height):
                 for j in range(input_width):
                     # normalize the input tensor
-                    output[batch_idx, channel_idx, i, j] = (input_tensor[batch_idx, channel_idx, i, j] - running_mean) / torch.sqrt(running_var)
+                    normalized = (input_tensor[batch_idx, channel_idx, i, j] - running_mean[channel_idx]) / torch.sqrt(running_var[channel_idx] + eps)
+                    # scale and shift the normalized tensor
+                    if weight is not None:
+                        normalized = normalized * weight[channel_idx]
+                    if bias is not None:
+                        normalized = normalized + bias[channel_idx]
+                    # assign the normalized, scaled, shifted value to the output tensor
+                    output[batch_idx, channel_idx, i, j] = normalized
 
     return output

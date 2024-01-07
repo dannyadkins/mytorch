@@ -195,7 +195,7 @@ class BatchNorm2DTester:
     # inputs: (input_tensor, running_mean, running_var, weight (optional), bias (optional), training (optional), momentum (optional), eps (optional))
     @staticmethod
     def get_random_args():
-        return [pytorch.randn(1, 1, 28, 28), pytorch.Tensor([0]), pytorch.Tensor([1])]
+        return [pytorch.randn(1, 1, 28, 28), pytorch.Tensor([0]), pytorch.Tensor([1]), pytorch.Tensor([1]), pytorch.Tensor([0]), False, 0.1, 1e-5]
     
     @staticmethod
     def get_canonical_fn_path():
