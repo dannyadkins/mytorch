@@ -160,10 +160,10 @@ class Conv2DTester:
     @staticmethod
     def get_random_args():
         t = pytorch.randn(1, 1, 28, 28)
-        t[t < 0] = 0
+        # t[t < 0] = 0
 
         kernel = pytorch.randn(1, 1, 3, 3)
-        kernel[kernel < 0] = 0
+        # kernel[kernel < 0] = 0
 
         return [t, kernel]
     

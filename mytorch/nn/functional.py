@@ -53,21 +53,23 @@ def relu_naive_triton(t):
 # conv2d methods
 # currently assumes stride=1 and padding=0
 # also assumes t and kernel are both entirely positive 
-def conv2d_naive(t, kernel):
+def conv2d_naive(t, kernel, stride=1, padding=0):
     batch_size, t_channels, t_height, t_width = t.shape
     k_out_channels, k_in_channels, k_height, k_width = kernel.shape
 
-    output_height = t_height - k_height + 1
-    output_width = t_width - k_width + 1
+    output_height = ((t_height - k_height + 2 * padding) // stride) + 1
+    output_width = ((t_width - k_width + 2 * padding) // stride) + 1
 
     output = torch.zeros((batch_size, k_out_channels, output_height, output_width))
 
     for b in range(batch_size):
         for k_out in range(k_out_channels):
             for t_channel in range(t_channels):
-                for i in range(output_height):
-                    for j in range(output_width):
-                        conv_sum = torch.sum(t[b, t_channel, i:i+k_height, j:j+k_width] * kernel[k_out, t_channel])
-                        output[b, k_out, i, j] += conv_sum
+                for i in range(0, t_height - k_height + 1 + padding, stride):
+                    for j in range(0, t_width - k_width + 1 + padding, stride):
+                        for h in range(k_height):
+                            for w in range(k_width):
+                                if (i + h < t_height) and (j + w < t_width):
+                                    output[b, k_out, i // stride, j // stride] += t[b, t_channel, i + h, j + w] * kernel[k_out, t_channel, h, w]
 
     return output
