@@ -32,13 +32,23 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
             'correct': True,
             'speed': baseline_speed,
             'speed_ratio': 1.0,
+            'error': None
         })
+
+        print("Pytorch output completed.")
 
         for fn_impl in fn_impls:
             cloned_args = [arg.clone() if isinstance(arg, pytorch.Tensor) else arg for arg in args]
 
+            error: Exception = None
+
             start_time = time()
-            mytorch_output = tester.test(mytorch, fn_impl, *cloned_args)
+
+            try: 
+                mytorch_output = tester.test(mytorch, fn_impl, *cloned_args)
+            except Exception as e:
+                error = e
+
             end_time = time()
 
             solution_matches = True 
@@ -53,11 +63,12 @@ def run_testers(experiments: List[Tuple[callable, List[str]]]):
                 'correct': solution_matches,
                 'speed': end_time - start_time,
                 'speed_ratio': (end_time - start_time) / baseline_speed,
+                'error': error,
             })
         print_table(outputs)
 
 def print_table(outputs: List[dict]):
-    table = PrettyTable(['Name', 'Correct', 'Speed', 'Speed Ratio %'])
+    table = PrettyTable(['Name', 'Correct', 'Speed', 'Speed Ratio %', 'Error'])
     for output in outputs:
         speed_ratio_percent_str = "{:.2f}%".format(output['speed_ratio'] * 100)
         # table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str])
@@ -72,7 +83,11 @@ def print_table(outputs: List[dict]):
             output['correct'] = "\033[92m" + "True" + "\033[0m"
         else: 
             output['correct'] = "\033[91m" + "False" + "\033[0m"
-        table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str])
+        
+        if output['error'] is not None:
+            output['error'] = "\033[91m" + str(output['error']) + "\033[0m"
+        
+        table.add_row([output['name'], output['correct'], output['speed'], speed_ratio_percent_str, output['error']])
     print(table)
 
 # abstract TestBase class, using ABC: 
@@ -124,14 +139,28 @@ class ReLUTester:
         fn = get_fn(torch_impl, fn_path)
         return fn(*args)
 
-# Here is a list that maps every major building block in deep learning, progressively getting bigger.
-# It points to the pytorch implementation/callpath, gives a set of example inputs, 
-# and also points to a mytorch callpath if that exists. We should be able to specify many implementations/callpaths, since I might try multiple for mytorch.
+class Conv2DTester: 
+    def setup(self):
+        pass
+    
+    # gets some random conv2d-compatible arguments
+    @staticmethod
+    def get_random_args():
+        return [pytorch.randn(1, 1, 28, 28), pytorch.randn(1, 1, 3, 3),]
+    
+    @staticmethod
+    def get_canonical_fn_path():
+        return 'nn.functional.conv2d'
 
+    def test(self, torch_impl, fn_path, *args):
+        fn = get_fn(torch_impl, fn_path)
+        return fn(*args)
+    
 if __name__ == "__main__":
 
     experiments = [
         (ReLUTester, ['nn.functional.relu_naive', 'nn.functional.relu_naive_inplace', 'relu_cython_naive', 'nn.functional.relu_vectorized_numpy', 'nn.functional.relu_naive_cuda', 'nn.functional.relu_naive_triton', 'nn.functional.bad_relu']),
+        (Conv2DTester, ['nn.functional.conv2d_naive'])
     ]
 
     run_testers(experiments)
